@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  .calc-card {
+    @apply bg-white rounded-2xl shadow-md p-6 border border-gray-100;
+  }
+  .input-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  .input-field {
+    @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           transition;
+  }
+  .btn-primary {
+    @apply bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5
+           rounded-lg shadow transition-colors focus:outline-none focus:ring-2
+           focus:ring-brand-500 focus:ring-offset-2;
+  }
+  .result-pill {
+    @apply bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 text-center;
+  }
+}
