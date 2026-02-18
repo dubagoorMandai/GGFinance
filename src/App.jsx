@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import AutoLoanPage from './pages/AutoLoanPage'
 import MortgagePage from './pages/MortgagePage'
 import InvestmentPage from './pages/InvestmentPage'
+import RentVsBuyPage from './pages/RentVsBuyPage'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/auto-loan" element={<AutoLoanPage />} />
             <Route path="/mortgage" element={<MortgagePage />} />
             <Route path="/investment" element={<InvestmentPage />} />
+            <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           </Routes>
         </main>
         <Footer />

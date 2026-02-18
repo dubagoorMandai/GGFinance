@@ -2,11 +2,13 @@
  * Calculate mortgage amortization.
  * @param {number} homePrice
  * @param {number} downPayment
- * @param {number} annualRate      - e.g. 6.5
- * @param {number} termYears       - e.g. 30
- * @param {number} annualTax       - annual property tax dollars
- * @param {number} annualInsurance - annual homeowners insurance dollars
- * @param {number} extraPayment    - extra monthly principal payment
+ * @param {number} annualRate        - e.g. 6.5
+ * @param {number} termYears         - e.g. 30
+ * @param {number} annualTax         - annual property tax dollars
+ * @param {number} annualInsurance   - annual homeowners insurance dollars
+ * @param {number} extraPayment      - extra monthly principal payment
+ * @param {number|null} customPMIRate - user-supplied annual PMI rate % (e.g. 0.8). 
+ *                                     If null, auto-calculated at 0.5% when LTV > 80%.
  * @returns mortgage details + schedule
  */
 export function calcMortgage({
@@ -17,6 +19,7 @@ export function calcMortgage({
   annualTax = 0,
   annualInsurance = 0,
   extraPayment = 0,
+  customPMIRate = null,
 }) {
   const principal = homePrice - downPayment
   const termMonths = termYears * 12
@@ -31,9 +34,11 @@ export function calcMortgage({
   const monthlyTax = annualTax / 12
   const monthlyInsurance = annualInsurance / 12
 
-  // PMI: ~0.5% of loan per year if down payment < 20%
+  // PMI: use user-supplied rate if provided, otherwise auto 0.5% when LTV > 80%
   const ltv = downPayment / homePrice
-  const monthlyPMI = ltv < 0.2 ? (principal * 0.005) / 12 : 0
+  const pmiRate = customPMIRate !== null ? customPMIRate : (ltv < 0.2 ? 0.5 : 0)
+  const monthlyPMI = pmiRate > 0 ? (principal * (pmiRate / 100)) / 12 : 0
+  const pmiAutoMode = customPMIRate === null
 
   const totalMonthly = piPayment + monthlyTax + monthlyInsurance + monthlyPMI
 
@@ -41,6 +46,7 @@ export function calcMortgage({
   let balance = principal
   let totalInterest = 0
   let month = 0
+  let pmiDropMonth = null
 
   while (balance > 0 && month < termMonths * 2) {
     month++
@@ -51,9 +57,10 @@ export function calcMortgage({
     totalInterest += interestCharge
     balance -= principalCharge
 
-    // Remove PMI once equity >= 20%
-    const currentLTV = balance / homePrice
-    const pmi = currentLTV >= 0.8 ? monthlyPMI : 0
+    // PMI drops once equity >= 20% (LTV <= 80%)
+    const currentEquityPct = 1 - (balance / homePrice)
+    const pmiActive = pmiRate > 0 && currentEquityPct < 0.2
+    if (pmiRate > 0 && !pmiActive && pmiDropMonth === null) pmiDropMonth = month
 
     schedule.push({
       month,
@@ -61,7 +68,7 @@ export function calcMortgage({
       principal: principalCharge,
       interest: interestCharge,
       balance: Math.max(balance, 0),
-      pmi,
+      pmi: pmiActive ? monthlyPMI : 0,
     })
 
     if (balance <= 0.01) break
@@ -73,6 +80,9 @@ export function calcMortgage({
     monthlyTax,
     monthlyInsurance,
     monthlyPMI,
+    pmiRate,
+    pmiAutoMode,
+    pmiDropMonth,
     totalMonthly,
     totalInterest,
     totalPaid: principal + totalInterest,
